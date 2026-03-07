@@ -10,6 +10,21 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.FoodSaver" />
+        android:theme="@style/Theme.FoodSaver">
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.action.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ui.CommercantDashboardActivity" />
+        <activity android:name=".ui.RegisterActivity" />
+        <activity android:name=".ui.ClientDashboardActivity" />
+        <activity android:name=".ui.MesReservationsActivity" />
+        <activity android:name=".ui.CommercantReservationsActivity" />
+        <activity android:name=".ui.ClientPaniersActivity" />
+    </application>
 
 </manifest>
