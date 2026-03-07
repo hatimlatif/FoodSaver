@@ -42,4 +42,8 @@ public class ReservationRepository {
     public LiveData<List<ReservationDetails>> getReservationsRecues(int commercantId) {
         return reservationDao.getReservationsRecues(commercantId);
     }
+
+    public LiveData<List<Integer>> getReservedPanierIds(int clientId) {
+        return reservationDao.getReservedPanierIds(clientId);
+    }
 }

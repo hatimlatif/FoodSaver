@@ -57,4 +57,8 @@ public class ClientViewModel extends AndroidViewModel {
     public LiveData<List<Panier>> getPaniersByCommerce(int commerceId) {
         return panierRepository.getPaniersByCommerce(commerceId);
     }
+
+    public LiveData<List<Integer>> getReservedPanierIds(int clientId) {
+        return reservationRepository.getReservedPanierIds(clientId);
+    }
 }

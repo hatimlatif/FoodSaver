@@ -88,4 +88,13 @@ public class ClientPanierAdapter extends RecyclerView.Adapter<ClientPanierAdapte
             btnReserver = itemView.findViewById(R.id.btnReserver);
         }
     }
+
+    // NOUVELLE MÉTHODE : Met à jour la liste depuis la base de données
+    public void setReservedPanierIds(List<Integer> reservedIds) {
+        this.paniersReserves.clear();
+        if (reservedIds != null) {
+            this.paniersReserves.addAll(reservedIds);
+        }
+        notifyDataSetChanged(); // Force la liste à se redessiner avec les bons boutons grisés
+    }
 }

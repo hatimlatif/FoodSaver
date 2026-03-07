@@ -65,5 +65,10 @@ public class ClientPaniersActivity extends AppCompatActivity {
             Toast.makeText(this, "Réservation effectuée pour : " + panier.getTitre(), Toast.LENGTH_SHORT).show();
             // Optionnel : Vous pourriez faire un finish() ici si vous voulez que ça retourne au dashboard après réservation
         });
+
+        // Écouter la base de données pour savoir quels paniers sont déjà réservés
+        clientViewModel.getReservedPanierIds(currentUserId).observe(this, reservedIds -> {
+            adapter.setReservedPanierIds(reservedIds);
+        });
     }
 }

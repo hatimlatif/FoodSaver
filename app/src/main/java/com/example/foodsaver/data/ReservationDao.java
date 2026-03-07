@@ -37,4 +37,7 @@ public interface ReservationDao {
     // Fetch all reservations made for the paniers belonging to this commercant
     @Query("SELECT r.id AS reservationId, p.titre, p.prix, r.statut FROM reservations r INNER JOIN paniers p ON r.panierId = p.id WHERE p.commerceId = :commercantId")
     LiveData<List<ReservationDetails>> getReservationsRecues(int commercantId);
+
+    @Query("SELECT panierId FROM reservations WHERE clientId = :clientId")
+    LiveData<List<Integer>> getReservedPanierIds(int clientId);
 }
