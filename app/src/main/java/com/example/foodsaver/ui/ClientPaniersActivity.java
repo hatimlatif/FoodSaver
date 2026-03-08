@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.foodsaver.R;
 import com.example.foodsaver.adapter.ClientPanierAdapter;
+import com.example.foodsaver.utils.NotificationHelper;
 import com.example.foodsaver.utils.SessionManager;
 import com.example.foodsaver.viewmodel.ClientViewModel;
 
@@ -19,12 +20,14 @@ public class ClientPaniersActivity extends AppCompatActivity {
 
     private ClientViewModel clientViewModel;
     private ClientPanierAdapter adapter;
-    private int currentUserId;
+    private String currentUserId;
+    private int previousPanierCount = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client_paniers);
+        NotificationHelper.createNotificationChannel(this);
 
         // Récupérer les infos envoyées par le Dashboard
         int commerceId = getIntent().getIntExtra("COMMERCE_ID", -1);
@@ -56,14 +59,29 @@ public class ClientPaniersActivity extends AppCompatActivity {
         if (commerceId != -1) {
             clientViewModel.getPaniersByCommerce(commerceId).observe(this, paniers -> {
                 adapter.setPaniers(paniers);
+
+                // LA MAGIE DES NOTIFICATIONS :
+                if (previousPanierCount != -1 && paniers.size() > previousPanierCount) {
+                    // Si la taille de la liste a augmenté, on déclenche la notification !
+                    String nouveauTitre = paniers.get(paniers.size() - 1).getTitre();
+                    NotificationHelper.showNewPanierNotification(this, nouveauTitre);
+                }
+                previousPanierCount = paniers.size(); // On met à jour le compteur
             });
         }
 
         // Gérer le clic sur "Réserver"
         adapter.setOnPanierClickListener(panier -> {
-            clientViewModel.reserverPanier(currentUserId, panier.getId());
-            Toast.makeText(this, "Réservation effectuée pour : " + panier.getTitre(), Toast.LENGTH_SHORT).show();
-            // Optionnel : Vous pourriez faire un finish() ici si vous voulez que ça retourne au dashboard après réservation
+
+            // 1. Instancier le Bottom Sheet avec le callback de succès
+            PaymentBottomSheetFragment paymentSheet = new PaymentBottomSheetFragment(() -> {
+                // 2. CE CODE S'EXÉCUTE UNIQUEMENT SI LE PAIEMENT RÉUSSIT
+                clientViewModel.reserverPanier(currentUserId, panier.getId());
+                Toast.makeText(this, "Réservation confirmée pour : " + panier.getTitre(), Toast.LENGTH_SHORT).show();
+            });
+
+            // 3. Afficher le Bottom Sheet à l'écran
+            paymentSheet.show(getSupportFragmentManager(), "PaymentBottomSheet");
         });
 
         // Écouter la base de données pour savoir quels paniers sont déjà réservés

@@ -1,4 +1,4 @@
-package com.example.foodsaver.data;
+package com.example.foodsaver.data.model;
 
 public class ReservationDetails {
     public int reservationId;

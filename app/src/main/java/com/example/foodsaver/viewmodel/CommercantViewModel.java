@@ -6,9 +6,10 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
-import com.example.foodsaver.data.Commerce;
-import com.example.foodsaver.data.Panier;
-import com.example.foodsaver.data.ReservationDetails;
+import com.example.foodsaver.data.model.Commerce;
+import com.example.foodsaver.data.model.Panier;
+import com.example.foodsaver.data.model.ReservationDetails;
+import com.example.foodsaver.data.model.Statistiques;
 import com.example.foodsaver.repository.CommerceRepository;
 import com.example.foodsaver.repository.PanierRepository;
 import com.example.foodsaver.repository.ReservationRepository;
@@ -27,11 +28,17 @@ public class CommercantViewModel extends AndroidViewModel {
         commerceRepository = new CommerceRepository(application);
     }
 
-    public LiveData<List<Commerce>> getMonCommerce(int commercantId) {
+    // CHANGÉ : commercantId est maintenant un String (UUID)
+    public LiveData<List<Commerce>> getMonCommerce(String commercantId) {
         return commerceRepository.getCommercesByCommercant(commercantId);
     }
 
-    public void creerCommerce(String nom, String adresse, int commercantId) {
+    public LiveData<Statistiques> getStatistiquesCommercant(String commercantId) {
+        return reservationRepository.getStatistiquesCommercant(commercantId);
+    }
+
+    // CHANGÉ : commercantId est maintenant un String (UUID)
+    public void creerCommerce(String nom, String adresse, String commercantId) {
         commerceRepository.insertCommerce(new Commerce(nom, adresse, commercantId));
     }
 
@@ -51,7 +58,8 @@ public class CommercantViewModel extends AndroidViewModel {
         panierRepository.deletePanier(panier);
     }
 
-    public LiveData<List<ReservationDetails>> getReservationsRecues(int commercantId) {
+    // CHANGÉ : commercantId est maintenant un String (UUID)
+    public LiveData<List<ReservationDetails>> getReservationsRecues(String commercantId) {
         return reservationRepository.getReservationsRecues(commercantId);
     }
 }

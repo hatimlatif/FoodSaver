@@ -7,7 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.foodsaver.data.User;
+import com.example.foodsaver.data.model.User;
 import com.example.foodsaver.repository.AuthRepository;
 
 public class AuthViewModel extends AndroidViewModel {

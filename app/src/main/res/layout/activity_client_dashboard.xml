@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,18 +13,20 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
+            android:background="@color/hunter_green"
+            android:elevation="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="16dp">
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Espace Client"
-                android:textColor="@android:color/white"
-                android:textSize="20sp"
+                android:textColor="@color/colorSurface"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <Button
@@ -30,9 +34,9 @@
                 style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
                 android:text="Historique"
-                android:textColor="@android:color/white" />
+                android:textColor="@color/golden_pollen"
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnLogout"
@@ -40,15 +44,16 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Quitter"
-                android:textColor="@android:color/white" />
+                android:textColor="@color/frozen_water" />
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewPaniers"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:clipToPadding="false"
-            android:padding="8dp" />
+            android:paddingTop="12dp"
+            android:paddingBottom="24dp" />
     </LinearLayout>
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

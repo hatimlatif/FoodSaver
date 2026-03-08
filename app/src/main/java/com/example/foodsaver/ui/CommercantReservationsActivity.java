@@ -24,7 +24,7 @@ public class CommercantReservationsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_commercant_reservations);
 
         SessionManager sessionManager = new SessionManager(this);
-        int commercantId = sessionManager.getUserId();
+        String commercantId = sessionManager.getUserId();
 
         RecyclerView recyclerView = findViewById(R.id.recyclerReservationsRecues);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

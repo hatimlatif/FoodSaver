@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
@@ -15,7 +16,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.foodsaver.R;
 import com.example.foodsaver.adapter.PanierAdapter;
-import com.example.foodsaver.data.Panier;
+import com.example.foodsaver.data.model.Panier;
+import com.example.foodsaver.utils.NotificationHelper;
 import com.example.foodsaver.utils.SessionManager;
 import com.example.foodsaver.viewmodel.CommercantViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -25,23 +27,36 @@ public class CommercantDashboardActivity extends AppCompatActivity {
     private CommercantViewModel commercantViewModel;
     private SessionManager sessionManager;
     private PanierAdapter adapter;
-    private int currentUserId;
+    private String currentUserId;
     private int currentCommerceId = -1; // CORRECTION: Variable declared here!
+    private int previousReservationCount = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_commercant_dashboard);
 
+        // 1. INITIALISATION DU VIEWMODEL EN PREMIER !
+        commercantViewModel = new ViewModelProvider(this).get(CommercantViewModel.class);
+
+        TextView tvRevenus = findViewById(R.id.tvStatsRevenus);
+        TextView tvVendus = findViewById(R.id.tvStatsVendus);
+
         sessionManager = new SessionManager(this);
         currentUserId = sessionManager.getUserId();
+
+        // 2. MAINTENANT ON PEUT L'UTILISER SANS CRASH
+        commercantViewModel.getStatistiquesCommercant(currentUserId).observe(this, stats -> {
+            if (stats != null) {
+                tvRevenus.setText("Revenus: " + stats.totalRevenus + " DH");
+                tvVendus.setText("Paniers Vendus: " + stats.paniersVendus);
+            }
+        });
 
         RecyclerView recyclerView = findViewById(R.id.recyclerViewPaniers);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new PanierAdapter();
         recyclerView.setAdapter(adapter);
-
-        commercantViewModel = new ViewModelProvider(this).get(CommercantViewModel.class);
 
         // CORRECTION: We ONLY load the Commerce, and then load the Paniers based on that.
         commercantViewModel.getMonCommerce(currentUserId).observe(this, commerces -> {
@@ -81,6 +96,18 @@ public class CommercantDashboardActivity extends AppCompatActivity {
         Button btnVoirReservations = findViewById(R.id.btnVoirReservations);
         btnVoirReservations.setOnClickListener(v -> {
             startActivity(new Intent(CommercantDashboardActivity.this, CommercantReservationsActivity.class));
+        });
+
+        // 1. Initialiser le canal (au cas où il n'existe pas encore)
+        NotificationHelper.createNotificationChannel(this);
+
+        // 2. Observer les réservations pour déclencher la notification
+        commercantViewModel.getReservationsRecues(currentUserId).observe(this, reservations -> {
+            if (previousReservationCount != -1 && reservations.size() > previousReservationCount) {
+                // Le nombre de réservations a augmenté !
+                NotificationHelper.showNewReservationNotification(this);
+            }
+            previousReservationCount = reservations.size();
         });
     }
 

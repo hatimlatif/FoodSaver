@@ -2,7 +2,8 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/colorBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -12,44 +13,73 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/colorPrimary"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="16dp">
+            android:background="@color/hunter_green"
+            android:elevation="8dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="20dp">
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Espace Commerçant"
-                android:textColor="@android:color/white"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:layout_marginBottom="16dp"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btnVoirReservations"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:text="Commandes"
-                android:textColor="@android:color/white" />
+                <TextView
+                    android:id="@+id/tvStatsRevenus"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Revenus: 0.0 DH"
+                    android:textColor="@color/golden_pollen"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btnLogout"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
+                <TextView
+                    android:id="@+id/tvStatsVendus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Vendus: 0"
+                    android:textColor="@color/frozen_water"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Quitter"
-                android:textColor="@android:color/white" />
+                android:gravity="end"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnVoirReservations"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="12dp"
+                    android:backgroundTint="@color/dark_spruce"
+                    android:text="Commandes reçues"
+                    android:textColor="@color/golden_pollen" />
+
+                <Button
+                    android:id="@+id/btnLogout"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quitter"
+                    android:textColor="@color/frozen_water"
+                    app:strokeColor="@color/frozen_water" />
+            </LinearLayout>
         </LinearLayout>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewPaniers"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
             android:clipToPadding="false"
-            android:padding="8dp" />
+            android:paddingTop="12dp"
+            android:paddingBottom="88dp" />
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -59,6 +89,8 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="24dp"
         android:contentDescription="Ajouter un panier"
-        app:srcCompat="@android:drawable/ic_input_add" />
+        app:backgroundTint="@color/rosy_copper"
+        app:srcCompat="@android:drawable/ic_input_add"
+        app:tint="@color/colorSurface" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

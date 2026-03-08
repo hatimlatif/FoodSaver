@@ -5,9 +5,10 @@ import android.content.SharedPreferences;
 
 public class SessionManager {
     private static final String PREF_NAME = "FoodSaverSession";
-    private static final String KEY_USER_ID = "userId";
-    private static final String KEY_ROLE = "userRole";
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
+    private static final String KEY_USER_ID = "userId"; // C'est maintenant un String (UUID)
+    private static final String KEY_USER_ROLE = "userRole";
+    private static final String KEY_ACCESS_TOKEN = "accessToken"; // Nouveau : Le jeton de sécurité cloud
 
     private SharedPreferences pref;
     private SharedPreferences.Editor editor;
@@ -17,10 +18,11 @@ public class SessionManager {
         editor = pref.edit();
     }
 
-    public void createLoginSession(int userId, String role) {
+    public void createLoginSession(String userId, String role, String token) {
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
-        editor.putInt(KEY_USER_ID, userId);
-        editor.putString(KEY_ROLE, role);
+        editor.putString(KEY_USER_ID, userId);
+        editor.putString(KEY_USER_ROLE, role);
+        editor.putString(KEY_ACCESS_TOKEN, token);
         editor.apply();
     }
 
@@ -28,12 +30,16 @@ public class SessionManager {
         return pref.getBoolean(KEY_IS_LOGGED_IN, false);
     }
 
-    public int getUserId() {
-        return pref.getInt(KEY_USER_ID, -1);
+    public String getUserId() {
+        return pref.getString(KEY_USER_ID, null);
     }
 
-    public String getRole() {
-        return pref.getString(KEY_ROLE, ""); // Returns "CLIENT" or "COMMERCANT"
+    public String getUserRole() {
+        return pref.getString(KEY_USER_ROLE, null);
+    }
+
+    public String getAccessToken() {
+        return pref.getString(KEY_ACCESS_TOKEN, null);
     }
 
     public void logoutUser() {

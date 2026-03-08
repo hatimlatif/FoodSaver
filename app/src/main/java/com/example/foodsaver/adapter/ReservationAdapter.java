@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.foodsaver.R;
-import com.example.foodsaver.data.ReservationDetails;
+import com.example.foodsaver.data.model.ReservationDetails;
 
 import java.util.ArrayList;
 import java.util.List;

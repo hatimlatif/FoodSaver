@@ -1,5 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
+    <color name="frozen_water">#c7eae4</color>
+    <color name="dark_spruce">#274029</color>
+    <color name="hunter_green">#315c2b</color>
+    <color name="rosy_copper">#db5a42</color>
+    <color name="golden_pollen">#ffcb47</color>
+
+    <color name="colorPrimary">@color/hunter_green</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+
+    <color name="colorSecondary">@color/rosy_copper</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+
+    <color name="colorTertiary">@color/golden_pollen</color>
+    <color name="colorOnTertiary">@color/dark_spruce</color>
+
+    <color name="colorBackground">#F4F8F7</color>
+    <color name="colorSurface">#FFFFFF</color>
+
+    <color name="textColorPrimary">@color/dark_spruce</color>
+    <color name="textColorSecondary">#5A705C</color>
 </resources>

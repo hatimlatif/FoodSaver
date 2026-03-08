@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.foodsaver.R;
-import com.example.foodsaver.data.User;
+import com.example.foodsaver.data.model.User;
 import com.example.foodsaver.utils.SessionManager;
 import com.example.foodsaver.viewmodel.AuthViewModel;
 import com.google.android.material.textfield.TextInputEditText;
@@ -32,7 +32,6 @@ public class RegisterActivity extends AppCompatActivity {
         sessionManager = new SessionManager(this);
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
-        // Map UI components
         etNom = findViewById(R.id.etNom);
         etEmail = findViewById(R.id.etRegEmail);
         etPassword = findViewById(R.id.etRegPassword);
@@ -40,17 +39,16 @@ public class RegisterActivity extends AppCompatActivity {
         Button btnRegister = findViewById(R.id.btnRegister);
         TextView tvGoToLogin = findViewById(R.id.tvGoToLogin);
 
-        // Observe successful registration
+        // V2 Update: Now expects the Supabase Auth token
         authViewModel.getAuthenticatedUser().observe(this, user -> {
             if (user != null) {
-                // Instantly log them in using SharedPreferences [cite: 15]
-                sessionManager.createLoginSession(user.getId(), user.getRole());
+                // Instantly log them in using the new SessionManager signature
+                sessionManager.createLoginSession(user.getId(), user.getRole(), user.getToken());
                 Toast.makeText(RegisterActivity.this, "Compte créé avec succès !", Toast.LENGTH_SHORT).show();
                 navigateToDashboard(user.getRole());
             }
         });
 
-        // Observe errors (like email already exists)
         authViewModel.getAuthError().observe(this, error -> {
             if (error != null) {
                 Toast.makeText(RegisterActivity.this, error, Toast.LENGTH_SHORT).show();
@@ -67,23 +65,20 @@ public class RegisterActivity extends AppCompatActivity {
                 return;
             }
 
-            // Determine which role was selected
             int selectedId = radioGroupRole.getCheckedRadioButtonId();
             RadioButton selectedRadioButton = findViewById(selectedId);
             String roleStr = selectedRadioButton.getText().toString().toUpperCase();
 
-            // Format the string to match our DB constants
             String role = roleStr.equals("CLIENT") ? "CLIENT" : "COMMERCANT";
 
-            // Create the new User object and send to Room
-            User newUser = new User(nom, email, password, role);
+            // CORRECTION : On met un ID temporaire ("") et on passe le mot de passe via le setter
+            User newUser = new User("", nom, email, role);
+            newUser.setToken(password);
+
             authViewModel.register(newUser);
         });
 
-        tvGoToLogin.setOnClickListener(v -> {
-            // Simply close this activity to reveal the LoginActivity underneath it
-            finish();
-        });
+        tvGoToLogin.setOnClickListener(v -> finish());
     }
 
     private void navigateToDashboard(String role) {
@@ -93,7 +88,6 @@ public class RegisterActivity extends AppCompatActivity {
         } else {
             intent = new Intent(RegisterActivity.this, ClientDashboardActivity.class);
         }
-        // Clear the backstack so they can't press 'Back' to go to the registration page
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();

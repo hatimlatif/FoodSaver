@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.foodsaver.R;
-import com.example.foodsaver.data.Panier;
+import com.example.foodsaver.data.model.Panier;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -64,10 +64,6 @@ public class ClientPanierAdapter extends RecyclerView.Adapter<ClientPanierAdapte
         holder.btnReserver.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onReserveClick(currentPanier);
-
-                // On ajoute l'ID au HashSet et on rafraîchit uniquement cet élément
-                paniersReserves.add(currentPanier.getId());
-                notifyItemChanged(position);
             }
         });
     }

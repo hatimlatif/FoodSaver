@@ -6,6 +6,15 @@ import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
+import com.example.foodsaver.data.local.CommerceDao;
+import com.example.foodsaver.data.local.PanierDao;
+import com.example.foodsaver.data.local.ReservationDao;
+import com.example.foodsaver.data.local.UserDao;
+import com.example.foodsaver.data.model.Commerce;
+import com.example.foodsaver.data.model.Panier;
+import com.example.foodsaver.data.model.Reservation;
+import com.example.foodsaver.data.model.User;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

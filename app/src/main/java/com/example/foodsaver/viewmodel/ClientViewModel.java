@@ -6,10 +6,10 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
-import com.example.foodsaver.data.Commerce;
-import com.example.foodsaver.data.Panier;
-import com.example.foodsaver.data.Reservation;
-import com.example.foodsaver.data.ReservationDetails;
+import com.example.foodsaver.data.model.Commerce;
+import com.example.foodsaver.data.model.Panier;
+import com.example.foodsaver.data.model.Reservation;
+import com.example.foodsaver.data.model.ReservationDetails;
 import com.example.foodsaver.repository.CommerceRepository;
 import com.example.foodsaver.repository.PanierRepository;
 import com.example.foodsaver.repository.ReservationRepository;
@@ -20,7 +20,7 @@ public class ClientViewModel extends AndroidViewModel {
 
     private PanierRepository panierRepository;
     private ReservationRepository reservationRepository;
-    private CommerceRepository commerceRepository; // Ajoutez en haut
+    private CommerceRepository commerceRepository;
 
     public ClientViewModel(@NonNull Application application) {
         super(application);
@@ -29,18 +29,18 @@ public class ClientViewModel extends AndroidViewModel {
         commerceRepository = new CommerceRepository(application);
     }
 
-    // Fetches ALL available baskets from the whole app
     public LiveData<List<Panier>> getAllPaniers() {
         return panierRepository.getAllPaniers();
     }
 
-    // Creates a new reservation
-    public void reserverPanier(int clientId, int panierId) {
-        Reservation reservation = new Reservation(clientId, panierId, "EN_ATTENTE");
+    // CHANGÉ : clientId est maintenant un String (UUID)
+    public void reserverPanier(String clientId, int panierId) {
+        Reservation reservation = new Reservation(clientId, panierId, "CONFIRMÉE");
         reservationRepository.insertReservation(reservation);
     }
 
-    public LiveData<List<ReservationDetails>> getMesReservations(int clientId) {
+    // CHANGÉ : clientId est maintenant un String (UUID)
+    public LiveData<List<ReservationDetails>> getMesReservations(String clientId) {
         return reservationRepository.getHistoriqueClient(clientId);
     }
 
@@ -48,17 +48,16 @@ public class ClientViewModel extends AndroidViewModel {
         reservationRepository.annulerReservation(reservationId);
     }
 
-    // Nouvelle méthode :
     public LiveData<List<Commerce>> getAllCommerces() {
         return commerceRepository.getAllCommerces();
     }
 
-    // Modifiez getPaniersByCommerce :
     public LiveData<List<Panier>> getPaniersByCommerce(int commerceId) {
         return panierRepository.getPaniersByCommerce(commerceId);
     }
 
-    public LiveData<List<Integer>> getReservedPanierIds(int clientId) {
+    // CHANGÉ : clientId est maintenant un String (UUID)
+    public LiveData<List<Integer>> getReservedPanierIds(String clientId) {
         return reservationRepository.getReservedPanierIds(clientId);
     }
 }

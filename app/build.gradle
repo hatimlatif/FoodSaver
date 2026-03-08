@@ -2,10 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
 android {
     namespace 'com.example.foodsaver'
     compileSdk {
         version = release(36)
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     defaultConfig {
@@ -14,6 +21,9 @@ android {
         targetSdk 36
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "SUPABASE_URL", properties.getProperty('SUPABASE_URL')
+        buildConfigField "String", "SUPABASE_KEY", properties.getProperty('SUPABASE_KEY')
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -34,10 +44,16 @@ dependencies {
     def room_version = "2.6.1"
     implementation "androidx.room:room-runtime:$room_version"
     implementation 'com.google.android.material:material:1.11.0'
+    // Retrofit & Gson for Supabase REST API
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    // OkHttp Interceptor for logging and injecting the Publishable Key
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.11.0'
     annotationProcessor "androidx.room:room-compiler:$room_version"
     def lifecycle_version = "2.7.0"
     implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+    implementation "androidx.work:work-runtime:2.9.0"
     implementation libs.appcompat
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit

@@ -3,9 +3,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/colorSurface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,14 +21,14 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Titre du Panier"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="@color/dark_spruce"
             android:textSize="20sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
@@ -35,15 +38,18 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Prix: 0.00 DH"
-                android:textSize="16sp"
+                android:textColor="@color/hunter_green"
+                android:textSize="18sp"
                 android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnReserver"
-                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Réserver" />
+                android:backgroundTint="@color/rosy_copper"
+                android:text="Réserver"
+                android:textColor="@android:color/white"
+                app:cornerRadius="8dp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

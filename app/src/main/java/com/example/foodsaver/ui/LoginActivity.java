@@ -7,12 +7,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.Constraints;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.PeriodicWorkRequest;
 
 import com.example.foodsaver.R;
 import com.example.foodsaver.utils.SessionManager;
 import com.example.foodsaver.viewmodel.AuthViewModel;
+import com.example.foodsaver.worker.SyncWorker;
 import com.google.android.material.textfield.TextInputEditText;
+
+import java.util.concurrent.TimeUnit;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -24,42 +31,52 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Initialize SessionManager first to check if already logged in
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+
+        PeriodicWorkRequest syncRequest = new PeriodicWorkRequest.Builder(
+                SyncWorker.class, 15, TimeUnit.MINUTES)
+                .setConstraints(constraints)
+                .build();
+
+        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "SupabaseSync",
+                ExistingPeriodicWorkPolicy.KEEP, // Keep existing if already running
+                syncRequest
+        );
+
         sessionManager = new SessionManager(this);
         if (sessionManager.isLoggedIn()) {
-            navigateToDashboard(sessionManager.getRole());
-            return; // Stop the activity from drawing the login screen
+            navigateToDashboard(sessionManager.getUserRole()); // Make sure this matches your SessionManager getter
+            return;
         }
 
         setContentView(R.layout.activity_login);
 
-        // Map XML elements to Java objects
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         Button btnLogin = findViewById(R.id.btnLogin);
         TextView tvGoToRegister = findViewById(R.id.tvGoToRegister);
 
-        // Initialize the ViewModel
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
-        // Observe the ViewModel for a successful login
+        // V2 Update: Grab the token from the user object
         authViewModel.getAuthenticatedUser().observe(this, user -> {
             if (user != null) {
-                // Save the session using SharedPreferences
-                sessionManager.createLoginSession(user.getId(), user.getRole());
+                // Save the session using SharedPreferences with the cloud token
+                sessionManager.createLoginSession(user.getId(), user.getRole(), user.getToken());
                 Toast.makeText(LoginActivity.this, "Connexion réussie", Toast.LENGTH_SHORT).show();
                 navigateToDashboard(user.getRole());
             }
         });
 
-        // Observe the ViewModel for errors (like wrong password)
         authViewModel.getAuthError().observe(this, error -> {
             if (error != null) {
                 Toast.makeText(LoginActivity.this, error, Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Handle button clicks
         btnLogin.setOnClickListener(v -> {
             String email = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
@@ -68,26 +85,25 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "Veuillez remplir tous les champs", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Trigger the background Room database check
+            // Trigger the ViewModel to handle the Supabase network call
             authViewModel.login(email, password);
         });
 
         tvGoToRegister.setOnClickListener(v -> {
-            // Use an Intent to move to the Register screen
             startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
     }
 
     private void navigateToDashboard(String role) {
         Intent intent;
-        if ("COMMERCANT".equals(role)) {
+        if ("ADMIN".equalsIgnoreCase(role)) {
+            intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+        } else if ("COMMERCANT".equalsIgnoreCase(role)) {
             intent = new Intent(LoginActivity.this, CommercantDashboardActivity.class);
         } else {
             intent = new Intent(LoginActivity.this, ClientDashboardActivity.class);
         }
         startActivity(intent);
-
-        // Call finish() so the user cannot press the "Back" button to return to the login screen
         finish();
     }
 }

@@ -26,7 +26,7 @@ public class MesReservationsActivity extends AppCompatActivity {
 
         // Fetching the user from SharedPreferences!
         SessionManager sessionManager = new SessionManager(this);
-        int clientId = sessionManager.getUserId();
+        String clientId = sessionManager.getUserId();
 
         RecyclerView recyclerView = findViewById(R.id.recyclerReservations);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
