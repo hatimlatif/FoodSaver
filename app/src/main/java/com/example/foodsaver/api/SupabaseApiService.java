@@ -69,12 +69,19 @@ public interface SupabaseApiService {
     @POST("rest/v1/reservations")
     Call<Void> insertReservationCloud(@Body ReservationRequest reservation);
 
+    @PATCH("rest/v1/reservations")
+    Call<Void> updateReservationCloud(@Query("id") String eqId, @Body ReservationRequest reservation);
+
     @DELETE("rest/v1/reservations")
     Call<Void> deleteReservationCloud(@Query("id") String eqId);
 
-    // NOUVEAU : Endpoint pour supprimer un commerce via l'Admin
+    // NOUVEAU : Endpoint pour supprimer un commerce via l'Admin (Soft delete)
+    @PATCH("rest/v1/commerces")
+    Call<Void> updateCommerceCloud(@Query("id") String eqId, @Body CommerceRequest commerce);
+
     @DELETE("rest/v1/commerces")
     Call<Void> deleteCommerceCloud(@Query("id") String eqId);
+
 
     // NOUVEAU : Récupérer le vrai rôle depuis public.users
     @GET("rest/v1/users")

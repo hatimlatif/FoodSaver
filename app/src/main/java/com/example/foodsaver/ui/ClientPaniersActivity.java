@@ -21,7 +21,6 @@ public class ClientPaniersActivity extends AppCompatActivity {
     private ClientViewModel clientViewModel;
     private ClientPanierAdapter adapter;
     private String currentUserId;
-    private int previousPanierCount = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,23 +54,13 @@ public class ClientPaniersActivity extends AppCompatActivity {
 
         clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
 
-        // Charger UNIQUEMENT les paniers de ce commerce spécifique
-        if (commerceId != -1) {
-            clientViewModel.getPaniersByCommerce(commerceId).observe(this, paniers -> {
-                adapter.setPaniers(paniers);
-
-                // LA MAGIE DES NOTIFICATIONS :
-                if (previousPanierCount != -1 && paniers.size() > previousPanierCount) {
-                    // Si la taille de la liste a augmenté, on déclenche la notification !
-                    String nouveauTitre = paniers.get(paniers.size() - 1).getTitre();
-                    NotificationHelper.showNewPanierNotification(this, nouveauTitre);
-                }
-                previousPanierCount = paniers.size(); // On met à jour le compteur
-            });
-        }
-
         // Gérer le clic sur "Réserver"
         adapter.setOnPanierClickListener(panier -> {
+            // NOUVEAU : Vérification du stock
+            if (panier.getQuantite() <= 0) {
+                Toast.makeText(this, "Désolé, ce panier est en rupture de stock !", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             // 1. Instancier le Bottom Sheet avec le callback de succès
             PaymentBottomSheetFragment paymentSheet = new PaymentBottomSheetFragment(() -> {
@@ -84,9 +73,15 @@ public class ClientPaniersActivity extends AppCompatActivity {
             paymentSheet.show(getSupportFragmentManager(), "PaymentBottomSheet");
         });
 
+
         // Écouter la base de données pour savoir quels paniers sont déjà réservés
         clientViewModel.getReservedPanierIds(currentUserId).observe(this, reservedIds -> {
             adapter.setReservedPanierIds(reservedIds);
+        });
+
+        // NOUVEAU : On observe la liste des paniers pour ce commerce !
+        clientViewModel.getPaniersByCommerce(commerceId).observe(this, paniers -> {
+            adapter.setPaniers(paniers);
         });
     }
 }

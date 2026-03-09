@@ -19,7 +19,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 // If you change the entities later (like adding a column for V2), you will increment the version number here.
-@Database(entities = {User.class, Commerce.class, Panier.class, Reservation.class}, version = 1, exportSchema = false)
+@Database(entities = {User.class, Commerce.class, Panier.class, Reservation.class}, version = 3, exportSchema = false)
+
+
 public abstract class AppDatabase extends RoomDatabase {
 
     // These abstract methods link the DAOs to the database

@@ -35,5 +35,17 @@ public interface PanierDao {
     @Query("SELECT * FROM paniers WHERE commerceId = :commerceId")
     LiveData<List<Panier>> getPaniersByCommerce(int commerceId);
 
-    @Query("SELECT * FROM paniers WHERE isSynced = 0") List<Panier> getUnsyncedPaniersSync();
+    @Query("SELECT * FROM paniers WHERE isSynced = 0")
+    List<Panier> getUnsyncedPaniersSync();
+
+    @Query("SELECT * FROM paniers")
+    List<Panier> getAllPaniersSync();
+
+    @Query("UPDATE paniers SET quantite = quantite - 1 WHERE id = :panierId AND quantite > 0")
+    void decrementQuantity(int panierId);
+
+    @Query("SELECT * FROM paniers WHERE id = :panierId")
+    Panier getPanierByIdSync(int panierId);
 }
+
+

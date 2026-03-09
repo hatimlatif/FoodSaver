@@ -19,6 +19,10 @@ public interface ReservationDao {
     @Insert
     long insertReservation(Reservation reservation);
 
+    @Query("SELECT * FROM reservations WHERE id = :id")
+    Reservation getReservationByIdSync(int id);
+
+
     @Update
     void updateReservation(Reservation reservation);
 
@@ -62,4 +66,10 @@ public interface ReservationDao {
             "INNER JOIN commerces c ON p.commerceId = c.id " +
             "WHERE c.commercantId = :commercantId AND r.statut = 'CONFIRMÉE'")
     LiveData<Statistiques> getStatistiquesCommercant(String commercantId);
+
+    @Query("SELECT * FROM reservations")
+    List<Reservation> getAllReservationsSync();
+
+    @Query("DELETE FROM reservations WHERE isSynced = 1")
+    void deleteAllSyncedReservations();
 }

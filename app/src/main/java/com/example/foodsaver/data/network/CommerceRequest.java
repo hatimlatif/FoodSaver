@@ -16,4 +16,5 @@ public class CommerceRequest {
         this.adresse = commerce.getAdresse();
         this.commercantId = commerce.getCommercantId();
     }
+
 }

@@ -11,6 +11,7 @@ import com.example.foodsaver.data.AppDatabase;
 import com.example.foodsaver.data.model.Panier;
 import com.example.foodsaver.data.local.PanierDao;
 import com.example.foodsaver.data.network.PanierRequest;
+import com.example.foodsaver.utils.NotificationHelper;
 
 import java.util.List;
 
@@ -21,47 +22,75 @@ import retrofit2.Response;
 public class PanierRepository {
     private PanierDao panierDao;
     private SupabaseApiService apiService;
+    private Application application; // ADDED: Context for notifications
 
     public PanierRepository(Application application) {
+        this.application = application;
         AppDatabase db = AppDatabase.getDatabase(application);
         panierDao = db.panierDao();
-        // Initialize the cloud API engine
         apiService = ApiClient.getClient().create(SupabaseApiService.class);
     }
 
-    /**
-     * HYBRID SYNC: Fetches local data instantly, then triggers a background cloud refresh.
-     */
     public LiveData<List<Panier>> getAllPaniers() {
-        refreshPaniersFromCloud(); // Background sync
-        return panierDao.getAllPaniers(); // Returns the local "Mirror"
+        refreshPaniersFromCloud();
+        return panierDao.getAllPaniers();
     }
 
     public LiveData<List<Panier>> getPaniersByCommerce(int commerceId) {
-        refreshPaniersFromCloud(); // Background sync
+        refreshPaniersFromCloud();
         return panierDao.getPaniersByCommerce(commerceId);
     }
 
-    /**
-     * CLOUD REFRESH: Downloads latest paniers from Supabase and overwrites the local Room DB.
-     */
-    private void refreshPaniersFromCloud() {
+    public void refreshPaniersFromCloud() {
         apiService.getPaniersFromCloud().enqueue(new Callback<List<Panier>>() {
             @Override
             public void onResponse(Call<List<Panier>> call, Response<List<Panier>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // 1. Récupérer la liste téléchargée
-                    List<Panier> downloadedCommerces = response.body();
+                    List<Panier> cloudPaniers = response.body();
+                    Log.d("SyncDebug", "Received " + cloudPaniers.size() + " paniers from cloud");
 
-                    // 2. LA CORRECTION : Marquer tout comme "déjà synchronisé"
-                    for (Panier p : downloadedCommerces) {
-                        p.setIsSynced(1);
-                    }
 
                     AppDatabase.databaseWriteExecutor.execute(() -> {
-                        // The OnConflictStrategy.REPLACE in the DAO ensures the local DB stays updated
-                        panierDao.insertAllPaniers(response.body());
+                        // 1. Get local IDs for comparison
+                        List<Panier> locals = panierDao.getAllPaniersSync();
+                        java.util.Set<Integer> localIds = new java.util.HashSet<>();
+                        if (locals != null) {
+                            for (Panier p : locals) localIds.add(p.getId());
+                        }
+
+                        // 2. Identify local paniers that should be deleted (missing from cloud)
+                        // Only delete if they WERE synced (isSynced=1) to avoid deleting items being created
+                        if (locals != null) {
+                            java.util.Set<Integer> cloudIds = new java.util.HashSet<>();
+                            for (Panier p : cloudPaniers) cloudIds.add(p.getId());
+
+                            for (Panier local : locals) {
+                                if (local.getIsSynced() == 1 && !cloudIds.contains(local.getId())) {
+                                    panierDao.deletePanier(local);
+                                }
+                            }
+                        }
+
+                        // 3. PRO TRIGGER: Check for REALLY new paniers (by ID)
+                        Panier trulyNew = null;
+                        for (Panier p : cloudPaniers) {
+                            if (!localIds.contains(p.getId())) {
+                                trulyNew = p;
+                                break;
+                            }
+                        }
+
+                        if (trulyNew != null) {
+                            NotificationHelper.showNewPanierNotification(application, trulyNew.getTitre());
+                        }
+
+                        // --- UPSERT LOGIC ---
+                        for (Panier p : cloudPaniers) {
+                            p.setIsSynced(1);
+                        }
+                        panierDao.insertAllPaniers(cloudPaniers);
                     });
+
                 }
             }
 
@@ -72,17 +101,12 @@ public class PanierRepository {
         });
     }
 
-    /**
-     * HYBRID INSERT: Saves to Room immediately (for speed) then pushes to Cloud.
-     */
     public void insertPanier(Panier panier) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            // 1. Sauvegarde locale (ID fantôme)
             panier.setIsSynced(0);
             long localId = panierDao.insertPanier(panier);
             panier.setId((int) localId);
 
-            // 2. Envoi vers le Cloud
             PanierRequest request = new PanierRequest(panier);
             apiService.insertPanierCloud(request).enqueue(new Callback<List<Panier>>() {
                 @Override
@@ -92,23 +116,17 @@ public class PanierRepository {
                         realCloudPanier.setIsSynced(1);
 
                         AppDatabase.databaseWriteExecutor.execute(() -> {
+                            // On supprime le "fantôme" (celui avec l'ID temporaire)
                             panierDao.deletePanier(panier);
+                            // On insère le vrai (avec l'ID Supabase)
                             panierDao.insertPanier(realCloudPanier);
                         });
-                    } else {
-                        // NOUVEAU : Afficher l'erreur exacte de Supabase dans le Logcat
-                        try {
-                            android.util.Log.e("SupabaseError", "Erreur insertion: " + response.errorBody().string());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
+
                     }
                 }
 
                 @Override
                 public void onFailure(Call<List<Panier>> call, Throwable t) {
-                    // NOUVEAU : Afficher l'erreur si le réseau plante complètement
-                    android.util.Log.e("SupabaseError", "Crash réseau: " + t.getMessage());
                 }
             });
         });
@@ -116,7 +134,7 @@ public class PanierRepository {
 
     public void updatePanier(Panier panier) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
-            panier.setIsSynced(0); // Marque comme modifié non synchronisé
+            panier.setIsSynced(0);
             panierDao.updatePanier(panier);
 
             String filter = "eq." + panier.getId();
@@ -140,8 +158,10 @@ public class PanierRepository {
 
     public void deletePanier(Panier panier) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            // 1. Suppression locale
             panierDao.deletePanier(panier);
 
+            // 2. Suppression Cloud
             String filter = "eq." + panier.getId();
             apiService.deletePanierCloud(filter).enqueue(new Callback<Void>() {
                 @Override
@@ -152,6 +172,19 @@ public class PanierRepository {
                 public void onFailure(Call<Void> call, Throwable t) {
                 }
             });
+        });
+    }
+
+    public void decrementQuantity(int panierId) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            // 1. Décrémentation locale
+            panierDao.decrementQuantity(panierId);
+
+            // 2. Récupérer l'objet mis à jour pour synchro cloud
+            Panier updatedPanier = panierDao.getPanierByIdSync(panierId);
+            if (updatedPanier != null) {
+                updatePanier(updatedPanier);
+            }
         });
     }
 }

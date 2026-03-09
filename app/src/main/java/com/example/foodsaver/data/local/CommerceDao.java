@@ -22,9 +22,19 @@ public interface CommerceDao {
     @Query("SELECT * FROM commerces")
     LiveData<List<Commerce>> getAllCommerces();
 
+    @Query("SELECT * FROM commerces")
+    List<Commerce> getAllCommercesSync();
+
+
+
     // ... autres méthodes inchangées ...
     @Query("SELECT * FROM commerces WHERE commercantId = :commercantId")
     LiveData<List<Commerce>> getCommercesByCommercant(String commercantId); // int -> String
+
+    @Query("SELECT * FROM commerces WHERE id = :id")
+    Commerce getCommerceByIdSync(int id);
+
+
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAllCommerces(List<Commerce> commerces);
@@ -39,4 +49,7 @@ public interface CommerceDao {
 
     @Delete
     void deleteCommerce(Commerce c);
+
+    @Query("DELETE FROM commerces WHERE isSynced = 1") // Change 'Commerce' to your exact table name if different
+    void deleteAllSyncedCommerces();
 }

@@ -42,17 +42,30 @@ public class CommerceRepository {
             @Override
             public void onResponse(Call<List<Commerce>> call, Response<List<Commerce>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // 1. Récupérer la liste téléchargée
                     List<Commerce> downloadedCommerces = response.body();
 
-                    // 2. LA CORRECTION : Marquer tout comme "déjà synchronisé"
-                    for (Commerce c : downloadedCommerces) {
-                        c.setIsSynced(1);
-                    }
-
                     AppDatabase.databaseWriteExecutor.execute(() -> {
-                        commerceDao.insertAllCommerces(response.body());
+                        // 1. Get locals for comparison
+                        List<Commerce> locals = commerceDao.getAllCommercesSync();
+                        java.util.Set<Integer> cloudIds = new java.util.HashSet<>();
+                        for (Commerce c : downloadedCommerces) cloudIds.add(c.getId());
+
+                        // 2. Identify local commerces that should be deleted (missing from cloud)
+                        if (locals != null) {
+                            for (Commerce local : locals) {
+                                if (local.getIsSynced() == 1 && !cloudIds.contains(local.getId())) {
+                                    commerceDao.deleteCommerce(local);
+                                }
+                            }
+                        }
+
+                        // 3. --- UPSERT LOGIC ---
+                        for (Commerce c : downloadedCommerces) {
+                            c.setIsSynced(1);
+                        }
+                        commerceDao.insertAllCommerces(downloadedCommerces);
                     });
+
                 }
             }
 
@@ -84,6 +97,7 @@ public class CommerceRepository {
                             commerceDao.deleteCommerce(commerce);
                             commerceDao.insertCommerce(realCloudCommerce);
                         });
+
                     } else {
                         try {
                             android.util.Log.e("SupabaseError", "Erreur Commerce: " + response.errorBody().string());
@@ -104,7 +118,7 @@ public class CommerceRepository {
             // 1. Suppression locale
             commerceDao.deleteCommerce(commerce);
 
-            // 2. Suppression Cloud (le "eq." est requis par l'API Supabase PostgREST)
+            // 2. Suppression Cloud
             apiService.deleteCommerceCloud("eq." + commerce.getId()).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
@@ -119,4 +133,5 @@ public class CommerceRepository {
             });
         });
     }
+
 }

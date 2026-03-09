@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.foodsaver.R;
 import com.example.foodsaver.adapter.CommerceAdapter;
+import com.example.foodsaver.utils.NotificationHelper;
 import com.example.foodsaver.utils.SessionManager;
 import com.example.foodsaver.viewmodel.ClientViewModel;
 
@@ -35,9 +36,39 @@ public class ClientDashboardActivity extends AppCompatActivity {
 
         clientViewModel = new ViewModelProvider(this).get(ClientViewModel.class);
 
+        // Canal de notification
+        NotificationHelper.createNotificationChannel(this);
+
+        // NOUVEAU : Demander la permission sur Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            String notificationPermission = android.Manifest.permission.POST_NOTIFICATIONS;
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, notificationPermission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{notificationPermission}, 101);
+            }
+        }
+
         clientViewModel.getAllCommerces().observe(this, commerces -> {
+
             commerceAdapter.setCommerces(commerces);
         });
+
+        // NOUVEAU : On s'assure que les paniers sont aussi frais pour les notifications
+        clientViewModel.getAllPaniers().observe(this, paniers -> {
+            // On n'affiche rien ici, c'est juste pour forcer le refresh et les notifications
+        });
+
+        // REFRESH AUTOMATIQUE (Toutes les 5 secondes)
+        android.os.Handler handler = new android.os.Handler();
+        Runnable refreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                clientViewModel.getAllCommerces(); // Trigger refresh
+                clientViewModel.getAllPaniers();   // Trigger refresh
+                handler.postDelayed(this, 5000); // 5 secondes
+            }
+        };
+        handler.postDelayed(refreshRunnable, 5000);
+
 
         // Quand on clique sur un commerce, on ouvre la page de ses paniers
         commerceAdapter.setOnCommerceClickListener(commerce -> {

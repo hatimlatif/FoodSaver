@@ -16,6 +16,9 @@ public class PanierRequest {
     @SerializedName("commerce_id")
     private int commerceId;
 
+    @SerializedName("statut")
+    private String statut;
+
     // Le constructeur prend le Panier local et extrait uniquement ce que Supabase a besoin de savoir
     public PanierRequest(Panier panier) {
         this.titre = panier.getTitre();

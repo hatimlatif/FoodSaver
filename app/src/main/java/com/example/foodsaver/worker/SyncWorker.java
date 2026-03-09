@@ -23,6 +23,7 @@ public class SyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+        Context context = getApplicationContext();
         PanierDao dao = AppDatabase.getDatabase(getApplicationContext()).panierDao();
         SupabaseApiService api = ApiClient.getClient().create(SupabaseApiService.class);
 
@@ -46,6 +47,21 @@ public class SyncWorker extends Worker {
                 return Result.retry();
             }
         }
+
+        com.example.foodsaver.repository.PanierRepository panierRepo =
+                new com.example.foodsaver.repository.PanierRepository((android.app.Application) context);
+
+        // (If the method is private, you might need to make 'refreshPaniers()' public in PanierRepository)
+        panierRepo.refreshPaniersFromCloud();
+
+        // Si c'est un commerçant, on met aussi à jour ses réservations
+        com.example.foodsaver.utils.SessionManager session = new com.example.foodsaver.utils.SessionManager(context);
+        if ("COMMERCANT".equals(session.getUserRole())) {
+            com.example.foodsaver.repository.ReservationRepository resRepo =
+                    new com.example.foodsaver.repository.ReservationRepository((android.app.Application) context);
+            resRepo.refreshReservations();
+        }
+
         return Result.success();
     }
 }

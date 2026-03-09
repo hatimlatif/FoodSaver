@@ -28,8 +28,8 @@ public class CommercantDashboardActivity extends AppCompatActivity {
     private SessionManager sessionManager;
     private PanierAdapter adapter;
     private String currentUserId;
-    private int currentCommerceId = -1; // CORRECTION: Variable declared here!
-    private int previousReservationCount = -1;
+    private int currentCommerceId = -1;
+    private AlertDialog createCommerceDialog; // NOUVEAU : Champ pour gérer la boîte de dialogue
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +63,11 @@ public class CommercantDashboardActivity extends AppCompatActivity {
             if (commerces == null || commerces.isEmpty()) {
                 showCreateCommerceDialog();
             } else {
+                // NOUVEAU : Si on a trouvé un commerce, on ferme la boîte de dialogue si elle était ouverte
+                if (createCommerceDialog != null && createCommerceDialog.isShowing()) {
+                    createCommerceDialog.dismiss();
+                    createCommerceDialog = null;
+                }
                 currentCommerceId = commerces.get(0).getId();
                 commercantViewModel.getMesPaniers(currentCommerceId).observe(this, paniers -> adapter.setPaniers(paniers));
             }
@@ -101,15 +106,29 @@ public class CommercantDashboardActivity extends AppCompatActivity {
         // 1. Initialiser le canal (au cas où il n'existe pas encore)
         NotificationHelper.createNotificationChannel(this);
 
-        // 2. Observer les réservations pour déclencher la notification
-        commercantViewModel.getReservationsRecues(currentUserId).observe(this, reservations -> {
-            if (previousReservationCount != -1 && reservations.size() > previousReservationCount) {
-                // Le nombre de réservations a augmenté !
-                NotificationHelper.showNewReservationNotification(this);
+        // NOUVEAU : Demander la permission sur Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            String notificationPermission = android.Manifest.permission.POST_NOTIFICATIONS;
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, notificationPermission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{notificationPermission}, 101);
             }
-            previousReservationCount = reservations.size();
-        });
+        }
+
+        // REFRESH AUTOMATIQUE (Toutes les 5 secondes)
+        android.os.Handler handler = new android.os.Handler();
+        Runnable refreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (currentUserId != null) {
+                    commercantViewModel.getStatistiquesCommercant(currentUserId); // Trigger refresh
+                    commercantViewModel.getReservationsRecues(currentUserId);    // Trigger refresh
+                }
+                handler.postDelayed(this, 5000);
+            }
+        };
+        handler.postDelayed(refreshRunnable, 5000);
     }
+
 
     private void showEditPanierDialog(Panier panier) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -137,9 +156,18 @@ public class CommercantDashboardActivity extends AppCompatActivity {
 
         builder.setPositiveButton("Enregistrer", (dialog, which) -> {
             try {
-                panier.setTitre(etTitre.getText().toString().trim());
-                panier.setPrix(Double.parseDouble(etPrix.getText().toString().trim()));
-                panier.setQuantite(Integer.parseInt(etQuantite.getText().toString().trim()));
+                String titre = etTitre.getText().toString().trim();
+                double prix = Double.parseDouble(etPrix.getText().toString().trim());
+                int quantite = Integer.parseInt(etQuantite.getText().toString().trim());
+
+                if (prix < 0 || quantite < 0) {
+                    Toast.makeText(this, "Le prix et la quantité doivent être positifs", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                panier.setTitre(titre);
+                panier.setPrix(prix);
+                panier.setQuantite(quantite);
 
                 commercantViewModel.modifierPanier(panier);
                 Toast.makeText(this, "Panier mis à jour !", Toast.LENGTH_SHORT).show();
@@ -147,6 +175,7 @@ public class CommercantDashboardActivity extends AppCompatActivity {
                 Toast.makeText(this, "Erreur de saisie", Toast.LENGTH_SHORT).show();
             }
         });
+
 
         builder.setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss());
         builder.show();
@@ -191,12 +220,19 @@ public class CommercantDashboardActivity extends AppCompatActivity {
                 double prix = Double.parseDouble(prixStr);
                 int quantite = Integer.parseInt(quantiteStr);
 
+                // NOUVEAU : Validation des données
+                if (prix < 0 || quantite < 0) {
+                    Toast.makeText(this, "Le prix et la quantité doivent être positifs", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
                 // CORRECTION: Uses the specific commerceId now!
                 commercantViewModel.ajouterPanier(titre, prix, quantite, commerceId);
                 Toast.makeText(this, "Panier ajouté !", Toast.LENGTH_SHORT).show();
             } catch (NumberFormatException e) {
                 Toast.makeText(this, "Prix ou quantité invalide", Toast.LENGTH_SHORT).show();
             }
+
         });
 
         builder.setNegativeButton("Annuler", (dialog, which) -> dialog.dismiss());
@@ -204,6 +240,9 @@ public class CommercantDashboardActivity extends AppCompatActivity {
     }
 
     private void showCreateCommerceDialog() {
+        // NOUVEAU : Ne pas recréer si déjà affichée
+        if (createCommerceDialog != null && createCommerceDialog.isShowing()) return;
+
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Configurez votre Magasin");
         builder.setCancelable(false); // Force la création
@@ -224,6 +263,7 @@ public class CommercantDashboardActivity extends AppCompatActivity {
         builder.setPositiveButton("Créer", (dialog, which) -> {
             commercantViewModel.creerCommerce(etNom.getText().toString(), etAdresse.getText().toString(), currentUserId);
         });
-        builder.show();
+        createCommerceDialog = builder.create();
+        createCommerceDialog.show();
     }
 }
