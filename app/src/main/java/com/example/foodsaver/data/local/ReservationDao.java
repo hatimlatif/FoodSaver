@@ -36,7 +36,7 @@ public interface ReservationDao {
     LiveData<List<Reservation>> getReservationsForCommerce(int commerceId);
 
     // Joins the tables to get readable details for the client
-    @Query("SELECT r.id AS reservationId, p.titre, p.prix, r.statut FROM reservations r INNER JOIN paniers p ON r.panierId = p.id WHERE r.clientId = :clientId")
+    @Query("SELECT r.id AS reservationId, p.titre, p.prix, r.statut, r.pickupTime AS pickupTime FROM reservations r INNER JOIN paniers p ON r.panierId = p.id WHERE r.clientId = :clientId")
     LiveData<List<ReservationDetails>> getHistoriqueClient(String clientId); // int -> String
 
     // Deletes the reservation
@@ -44,7 +44,7 @@ public interface ReservationDao {
     void annulerReservation(int reservationId);
 
     // CORRECTION LOGIQUE : On relie 'paniers' à 'commerces' pour vérifier le bon commercantId (UUID)
-    @Query("SELECT r.id AS reservationId, p.titre, p.prix, r.statut FROM reservations r " +
+    @Query("SELECT r.id AS reservationId, p.titre, p.prix, r.statut, r.pickupTime AS pickupTime FROM reservations r " +
             "INNER JOIN paniers p ON r.panierId = p.id " +
             "INNER JOIN commerces c ON p.commerceId = c.id " +
             "WHERE c.commercantId = :commercantId")

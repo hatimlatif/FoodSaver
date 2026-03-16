@@ -10,10 +10,13 @@ public class ReservationRequest {
     private int panierId;
     @SerializedName("statut")
     private String statut;
+    @SerializedName("pickup_time")
+    private String pickupTime;
 
     public ReservationRequest(Reservation reservation) {
         this.clientId = reservation.getClientId();
         this.panierId = reservation.getPanierId();
         this.statut = reservation.getStatut();
+        this.pickupTime = reservation.getPickupTime();
     }
 }

@@ -44,6 +44,9 @@ public interface PanierDao {
     @Query("UPDATE paniers SET quantite = quantite - 1 WHERE id = :panierId AND quantite > 0")
     void decrementQuantity(int panierId);
 
+    @Query("UPDATE paniers SET quantite = quantite + 1 WHERE id = :panierId")
+    void incrementQuantity(int panierId);
+
     @Query("SELECT * FROM paniers WHERE id = :panierId")
     Panier getPanierByIdSync(int panierId);
 }

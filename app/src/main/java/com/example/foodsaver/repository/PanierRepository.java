@@ -187,4 +187,17 @@ public class PanierRepository {
             }
         });
     }
+
+    public void incrementQuantity(int panierId) {
+        AppDatabase.databaseWriteExecutor.execute(() -> {
+            // 1. Incrémentation locale
+            panierDao.incrementQuantity(panierId);
+
+            // 2. Récupérer l'objet mis à jour pour synchro cloud
+            Panier updatedPanier = panierDao.getPanierByIdSync(panierId);
+            if (updatedPanier != null) {
+                updatePanier(updatedPanier);
+            }
+        });
+    }
 }

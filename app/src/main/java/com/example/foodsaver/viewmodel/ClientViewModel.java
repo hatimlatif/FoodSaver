@@ -15,6 +15,7 @@ import com.example.foodsaver.repository.PanierRepository;
 import com.example.foodsaver.repository.ReservationRepository;
 
 import java.util.List;
+import java.util.Set;
 
 public class ClientViewModel extends AndroidViewModel {
 
@@ -34,9 +35,17 @@ public class ClientViewModel extends AndroidViewModel {
     }
 
     // CHANGÉ : clientId est maintenant un String (UUID)
-    public void reserverPanier(String clientId, int panierId) {
-        Reservation reservation = new Reservation(clientId, panierId, "CONFIRMÉE");
-        reservationRepository.insertReservation(reservation);
+    public void reserverPanier(String clientId, int panierId, String pickupTimeUtc, ReservationRepository.ReservationActionCallback callback) {
+        Reservation reservation = new Reservation(clientId, panierId, "CONFIRMÉE", pickupTimeUtc);
+        reservationRepository.insertReservation(reservation, callback);
+    }
+
+    public void getTakenPickupTimesForPanier(int panierId, ReservationRepository.PickupTimesCallback callback) {
+        reservationRepository.getTakenPickupTimesForPanier(panierId, callback);
+    }
+
+    public void getTakenPickupTimesForClient(String clientId, ReservationRepository.PickupTimesCallback callback) {
+        reservationRepository.getTakenPickupTimesForClient(clientId, callback);
     }
 
     // CHANGÉ : clientId est maintenant un String (UUID)

@@ -12,6 +12,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.foodsaver.R;
 import com.example.foodsaver.data.model.ReservationDetails;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +47,7 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         ReservationDetails res = reservations.get(position);
         holder.tvTitre.setText(res.titre);
-        holder.tvPrix.setText("Prix: " + res.prix + " DH - " + res.statut);
+        holder.tvPrix.setText("Prix: " + res.prix + " DH - " + res.statut + "\nRetrait: " + formatPickupTime(res.pickupTime));
 
         holder.btnAnnuler.setOnClickListener(v -> {
             if (listener != null) listener.onCancelClick(res.reservationId);
@@ -54,6 +57,20 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
     @Override
     public int getItemCount() {
         return reservations.size();
+    }
+
+    private String formatPickupTime(String pickupTimeUtc) {
+        if (pickupTimeUtc == null || pickupTimeUtc.trim().isEmpty()) {
+            return "Non defini";
+        }
+
+        try {
+            return Instant.parse(pickupTimeUtc)
+                    .atZone(ZoneId.systemDefault())
+                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        } catch (Exception e) {
+            return pickupTimeUtc;
+        }
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {

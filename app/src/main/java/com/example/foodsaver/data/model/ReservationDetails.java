@@ -5,4 +5,5 @@ public class ReservationDetails {
     public String titre;
     public double prix;
     public String statut;
+    public String pickupTime;
 }

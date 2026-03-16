@@ -17,6 +17,10 @@ import com.example.foodsaver.utils.NotificationHelper;
 import com.example.foodsaver.utils.SessionManager;
 
 import java.util.List;
+import java.util.Set;
+import java.util.HashSet;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -32,6 +36,104 @@ public class ReservationRepository {
         AppDatabase db = AppDatabase.getDatabase(application);
         reservationDao = db.reservationDao();
         apiService = ApiClient.getClient().create(SupabaseApiService.class);
+    }
+
+    public interface PickupTimesCallback {
+        void onSuccess(Set<Long> takenEpochMinutes);
+
+        void onFailure(String errorMessage);
+    }
+
+    public interface ReservationActionCallback {
+        void onSuccess();
+
+        void onConflict(String message);
+
+        void onFailure(String message);
+    }
+
+    public void getTakenPickupTimesForPanier(int panierId, PickupTimesCallback callback) {
+        String nowUtc = "gte." + DateTimeFormatter.ISO_INSTANT.format(Instant.now());
+        apiService.getTakenPickupTimesForPanier(
+                "eq." + panierId,
+                "eq.CONFIRMÉE",
+                nowUtc
+        ).enqueue(new Callback<List<Reservation>>() {
+            @Override
+            public void onResponse(Call<List<Reservation>> call, Response<List<Reservation>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    callback.onFailure("Impossible de verifier les creneaux pour le moment.");
+                    return;
+                }
+
+                Set<Long> takenMinutes = new HashSet<>();
+                for (Reservation row : response.body()) {
+                    try {
+                        if (row.getPickupTime() != null) {
+                            takenMinutes.add(Instant.parse(row.getPickupTime()).getEpochSecond() / 60L);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                callback.onSuccess(takenMinutes);
+            }
+
+            @Override
+            public void onFailure(Call<List<Reservation>> call, Throwable t) {
+                callback.onFailure("Erreur reseau lors de la verification des creneaux.");
+            }
+        });
+    }
+
+    public void getTakenPickupTimesForClient(String clientId, PickupTimesCallback callback) {
+        String nowUtc = "gte." + DateTimeFormatter.ISO_INSTANT.format(Instant.now());
+        apiService.getTakenPickupTimesForClient(
+                "eq." + clientId,
+                "eq.CONFIRMÉE",
+                nowUtc
+        ).enqueue(new Callback<List<Reservation>>() {
+            @Override
+            public void onResponse(Call<List<Reservation>> call, Response<List<Reservation>> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    callback.onFailure("Impossible de verifier vos creneaux pour le moment.");
+                    return;
+                }
+
+                Set<Long> takenMinutes = new HashSet<>();
+                for (Reservation row : response.body()) {
+                    try {
+                        if (row.getPickupTime() != null) {
+                            takenMinutes.add(Instant.parse(row.getPickupTime()).getEpochSecond() / 60L);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                }
+
+                callback.onSuccess(takenMinutes);
+            }
+
+            @Override
+            public void onFailure(Call<List<Reservation>> call, Throwable t) {
+                callback.onFailure("Erreur reseau lors de la verification de vos creneaux.");
+            }
+        });
+    }
+
+    private String mapConflictMessage(Response<Void> response) {
+        String defaultMessage = "Ce creneau est indisponible. Choisissez une autre heure.";
+        try {
+            if (response.errorBody() == null) return defaultMessage;
+            String error = response.errorBody().string();
+            if (error.contains("reservations_unique_client_pickup_confirmed_idx")) {
+                return "Vous avez deja un retrait confirme a cette heure.";
+            }
+            if (error.contains("reservations_unique_panier_pickup_confirmed_idx")) {
+                return "Ce creneau est deja reserve. Choisissez une autre heure.";
+            }
+        } catch (Exception ignored) {
+        }
+        return defaultMessage;
     }
 
     public void refreshReservations() {
@@ -122,7 +224,7 @@ public class ReservationRepository {
     }
 
 
-    public void insertReservation(Reservation reservation) {
+    public void insertReservation(Reservation reservation, ReservationActionCallback callback) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
             reservation.setIsSynced(0);
             long id = reservationDao.insertReservation(reservation);
@@ -139,12 +241,26 @@ public class ReservationRepository {
                             // NOUVEAU : Décrémenter le stock !
                             new PanierRepository(application).decrementQuantity(reservation.getPanierId());
                         });
+                        if (callback != null) callback.onSuccess();
+                    } else {
+                        AppDatabase.databaseWriteExecutor.execute(() -> reservationDao.annulerReservation(reservation.getId()));
+                        refreshReservations();
+                        Log.e("ReservationConflict", "Insert rejected by cloud: HTTP " + response.code());
+                        if (callback != null) {
+                            if (response.code() == 409) {
+                                callback.onConflict(mapConflictMessage(response));
+                            } else {
+                                callback.onFailure("Reservation refusee par le serveur (" + response.code() + ").");
+                            }
+                        }
                     }
                 }
 
 
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
+                    AppDatabase.databaseWriteExecutor.execute(() -> reservationDao.annulerReservation(reservation.getId()));
+                    if (callback != null) callback.onFailure("Erreur reseau pendant la reservation.");
                 }
             });
         });
@@ -152,6 +268,9 @@ public class ReservationRepository {
 
     public void annulerReservation(int reservationId) {
         AppDatabase.databaseWriteExecutor.execute(() -> {
+            Reservation existing = reservationDao.getReservationByIdSync(reservationId);
+            Integer panierId = existing != null ? existing.getPanierId() : null;
+
             // 1. Suppression physique locale
             reservationDao.annulerReservation(reservationId);
 
@@ -160,10 +279,14 @@ public class ReservationRepository {
             apiService.deleteReservationCloud(filter).enqueue(new Callback<Void>() {
                 @Override
                 public void onResponse(Call<Void> call, Response<Void> response) {
+                    if (response.isSuccessful() && panierId != null) {
+                        new PanierRepository(application).incrementQuantity(panierId);
+                    }
                 }
 
                 @Override
                 public void onFailure(Call<Void> call, Throwable t) {
+                    Log.e("ReservationCancel", "Echec suppression cloud: " + t.getMessage());
                 }
             });
         });

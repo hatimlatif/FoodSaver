@@ -20,12 +20,16 @@ public class Reservation {
     @SerializedName("statut")
     private String statut;
 
+    @SerializedName("pickup_time")
+    private String pickupTime;
+
     private int isSynced = 1;
 
-    public Reservation(String clientId, int panierId, String statut) {
+    public Reservation(String clientId, int panierId, String statut, String pickupTime) {
         this.clientId = clientId;
         this.panierId = panierId;
         this.statut = statut;
+        this.pickupTime = pickupTime;
     }
 
     public int getId() {
@@ -44,6 +48,10 @@ public class Reservation {
         return statut;
     }
 
+    public String getPickupTime() {
+        return pickupTime;
+    }
+
     public void setId(int id) {
         this.id = id;
     }
@@ -58,6 +66,10 @@ public class Reservation {
 
     public void setStatut(String statut) {
         this.statut = statut;
+    }
+
+    public void setPickupTime(String pickupTime) {
+        this.pickupTime = pickupTime;
     }
 
     public int getIsSynced() {

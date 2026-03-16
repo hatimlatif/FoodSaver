@@ -1,7 +1,5 @@
 package com.example.foodsaver.api;
 
-import androidx.room.Delete;
-
 import com.example.foodsaver.data.model.PublicUser;
 import com.example.foodsaver.data.network.AuthRequest;
 import com.example.foodsaver.data.network.AuthResponse;
@@ -64,6 +62,20 @@ public interface SupabaseApiService {
 
     @GET("rest/v1/reservations?select=*")
     Call<List<Reservation>> getReservationsFromCloud();
+
+    @GET("rest/v1/reservations?select=pickup_time")
+    Call<List<Reservation>> getTakenPickupTimesForPanier(
+            @Query("panier_id") String eqPanierId,
+            @Query("statut") String eqStatut,
+            @Query("pickup_time") String gtePickupTime
+    );
+
+    @GET("rest/v1/reservations?select=pickup_time")
+    Call<List<Reservation>> getTakenPickupTimesForClient(
+            @Query("client_id") String eqClientId,
+            @Query("statut") String eqStatut,
+            @Query("pickup_time") String gtePickupTime
+    );
 
     // Gardé uniquement la bonne version avec ReservationRequest
     @POST("rest/v1/reservations")

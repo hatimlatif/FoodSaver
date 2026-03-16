@@ -2,6 +2,7 @@ package com.example.foodsaver.ui;
 
 import android.os.Bundle;
 import android.widget.Button;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -30,11 +31,14 @@ public class CommercantReservationsActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new ReservationAdapter();
-        // We do NOT set the cancel listener here, so the button won't do anything for the Commerçant.
-        // (In a real app, you might hide the button entirely inside the adapter based on the role).
         recyclerView.setAdapter(adapter);
 
         commercantViewModel = new ViewModelProvider(this).get(CommercantViewModel.class);
+
+        adapter.setOnCancelClickListener(reservationId -> {
+            commercantViewModel.annulerReservation(reservationId);
+            Toast.makeText(this, "Reservation annulee", Toast.LENGTH_SHORT).show();
+        });
 
         commercantViewModel.getReservationsRecues(commercantId).observe(this, reservations -> {
             adapter.setReservations(reservations);

@@ -62,4 +62,8 @@ public class CommercantViewModel extends AndroidViewModel {
     public LiveData<List<ReservationDetails>> getReservationsRecues(String commercantId) {
         return reservationRepository.getReservationsRecues(commercantId);
     }
+
+    public void annulerReservation(int reservationId) {
+        reservationRepository.annulerReservation(reservationId);
+    }
 }
